@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人所得税计算器</title>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #1a73e8;
+      margin-bottom: 20px;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #f1f1f1;
+      border: 1px solid #ddd;
+      border-bottom: none;
+      border-radius: 5px 5px 0 0;
+      margin-right: 5px;
+    }
+    .tab.active {
+      background-color: #fff;
+      border-bottom: 1px solid #fff;
+      margin-bottom: -1px;
+      font-weight: bold;
+      color: #1a73e8;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #0d62c9;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      border-left: 4px solid #1a73e8;
+    }
+    .result h3 {
+      margin-top: 0;
+      color: #1a73e8;
+    }
+    .summary-table {
+      margin-top: 20px;
+    }
+    .explanation {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #f0f7ff;
+      border-radius: 4px;
+      border-left: 4px solid #1a73e8;
+    }
+    .overseas-income {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #fff8e1;
+      border-radius: 4px;
+      border-left: 4px solid #ffc107;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>个人所得税计算器</h1>
+    
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('monthly')">月度收入</div>
+      <div class="tab" onclick="switchTab('yearly')">年度汇总</div>
+      <div class="tab" onclick="switchTab('overseas')">境外收入补税</div>
+    </div>
+    
+    <div id="monthly" class="tab-content active">
+      <h2>月度工资薪金所得税计算</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>月份</th>
+            <th>税前收入(元)</th>
+            <th>五险一金(元)</th>
+            <th>专项附加扣除(元)</th>
+            <th>累计应纳税所得额(元)</th>
+            <th>当月应纳税额(元)</th>
+          </tr>
+        </thead>
+        <tbody id="monthly-table">
+          <!-- 初始化12个月的输入行 -->
+        </tbody>
+      </table>
+      <button onclick="calculateMonthlyTax()">计算月度税额</button>
+      <div class="result" id="monthly-result">
+        <h3>计算结果</h3>
+        <p>请输入收入信息并点击计算按钮</p>
+      </div>
+    </div>
+    
+    <div id="yearly" class="tab-content">
+      <h2>年度个人所得税汇总</h2>
+      <div class="summary-table" id="yearly-summary">
+        <p>请先在月度收入选项卡中输入数据并计算</p>
+      </div>
+    </div>
+    
+    <div id="overseas" class="tab-content">
+      <h2>境外收入补税计算</h2>
+      <div class="overseas-income">
+        <h3>境外收入信息</h3>
+        <div>
+          <label for="overseas-amount">境外年收入(元):</label>
+          <input type="number" id="overseas-amount" placeholder="请输入境外年收入">
+        </div>
+        <div style="margin-top: 10px;">
+          <label for="overseas-tax-paid">已在境外缴纳的税款(元):</label>
+          <input type="number" id="overseas-tax-paid" placeholder="请输入已在境外缴纳的税款">
+        </div>
+        <button onclick="calculateOverseasTax()" style="margin-top: 15px;">计算境外收入补税</button>
+      </div>
+      <div class="result" id="overseas-result">
+        <h3>境外收入补税计算结果</h3>
+        <p>请输入境外收入信息并点击计算按钮</p>
+      </div>
+    </div>
+    
+    <div class="explanation">
+      <h3>计算说明</h3>
+      <p><strong>个人所得税计算公式：</strong></p>
+      <p>应纳税所得额 = 累计收入 - 累计五险一金 - 累计专项附加扣除 - 累计减除费用(5000元/月)</p>
+      <p>应纳税额 = 应纳税所得额 × 适用税率 - 速算扣除数 - 已缴税额</p>
+      <p><strong>个人所得税税率表：</strong></p>
+      <table>
+        <tr>
+          <th>级数</th>
+          <th>全年应纳税所得额</th>
+          <th>税率(%)</th>
+          <th>速算扣除数</th>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>不超过36,000元</td>
+          <td>3</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>超过36,000元至144,000元</td>
+          <td>10</td>
+          <td>2,520</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>超过144,000元至300,000元</td>
+          <td>20</td>
+          <td>16,920</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>超过300,000元至420,000元</td>
+          <td>25</td>
+          <td>31,920</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>超过420,000元至660,000元</td>
+          <td>30</td>
+          <td>52,920</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>超过660,000元至960,000元</td>
+          <td>35</td>
+          <td>85,920</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>超过960,000元</td>
+          <td>45</td>
+          <td>181,920</td>
+        </tr>
+      </table>
+      <p><strong>境外收入补税说明：</strong></p>
+      <p>1. 境外收入需要与境内收入合并计算个人所得税</p>
+      <p>2. 已在境外缴纳的税款可以抵免，但抵免限额为境外所得对应的我国税法计算的应纳税额</p>
+      <p>3. 抵免限额 = (全部收入应纳税额 - 境内收入应纳税额)</p>
+      <p>4. 如果境外已缴税款小于抵免限额，需要补缴差额部分</p>
+    </div>
+  </div>
+  
+  <script>
+    // 初始化月度表格
+    function initMonthlyTable() {
+      const tableBody = document.getElementById('monthly-table');
+      tableBody.innerHTML = '';
+      
+      for (let i = 1; i <= 12; i++) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${i}月</td>
+          <td><input type="number" id="income-${i}" placeholder="税前收入"></td>
+          <td><input type="number" id="insurance-${i}" placeholder="五险一金"></td>
+          <td><input type="number" id="deduction-${i}" placeholder="专项附加扣除"></td>
+          <td id="taxable-income-${i}">-</td>
+          <td id="tax-${i}">-</td>
+        `;
+        tableBody.appendChild(row);
+      }
+    }
+    
+    // 切换标签页
+    function switchTab(tabId) {
+      // 隐藏所有标签内容
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      // 取消所有标签的活动状态
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // 显示选中的标签内容
+      document.getElementById(tabId).classList.add('active');
+      
+      // 设置选中标签的活动状态
+      document.querySelectorAll('.tab').forEach(tab => {
+        if (tab.textContent.includes(tabId === 'monthly' ? '月度收入' : (tabId === 'yearly' ? '年度汇总' : '境外收入'))) {
+          tab.classList.add('active');
+        }
+      });
+    }
+    
+    // 计算月度个人所得税
+    function calculateMonthlyTax() {
+      const monthlyData = [];
+      let cumulativeIncome = 0;
+      let cumulativeInsurance = 0;
+      let cumulativeDeduction = 0;
+      let cumulativeTax = 0;
+      
+      // 收集每月数据
+      for (let i = 1; i <= 12; i++) {
+        const income = parseFloat(document.getElementById(`income-${i}`).value) || 0;
+        const insurance = parseFloat(document.getElementById(`insurance-${i}`).value) || 0;
+        const deduction = parseFloat(document.getElementById(`deduction-${i}`).value) || 0;
+        
+        if (income > 0) {
+          cumulativeIncome += income;
+          cumulativeInsurance += insurance;
+          cumulativeDeduction += deduction;
+          
+          // 计算累计应纳税所得额
+          const cumulativeTaxableIncome = cumulativeIncome - cumulativeInsurance - cumulativeDeduction - (5000 * i);
+          
+          // 显示累计应纳税所得额
+          document.getElementById(`taxable-income-${i}`).textContent = cumulativeTaxableIncome > 0 ? cumulativeTaxableIncome.toFixed(2) : '0.00';
+          
+          // 计算当月应纳税额
+          let currentMonthTax = 0;
+          if (cumulativeTaxableIncome > 0) {
+            // 计算累计应纳税额
+            let totalTax = calculateTax(cumulativeTaxableIncome);
+            
+            // 当月应纳税额 = 累计应纳税额 - 已缴税额
+            currentMonthTax = totalTax - cumulativeTax;
+            cumulativeTax += currentMonthTax;
+          }
+          
+          // 显示当月应纳税额
+          document.getElementById(`tax-${i}`).textContent = currentMonthTax.toFixed(2);
+          
+          // 保存月度数据用于汇总
+          monthlyData.push({
+            month: i,
+            income: income,
+            insurance: insurance,
+            deduction: deduction,
+            taxableIncome: cumulativeTaxableIncome > 0 ? cumulativeTaxableIncome : 0,
+            tax: currentMonthTax
+          });
+        }
+      }
+      
+      // 显示月度计算结果
+      const resultDiv = document.getElementById('monthly-result');
+      if (monthlyData.length > 0) {
+        const totalMonths = monthlyData.length;
+        const totalTaxableIncome = cumulativeIncome - cumulativeInsurance - cumulativeDeduction - (5000 * totalMonths);
+        
+        resultDiv.innerHTML = `
+          <h3>计算结果</h3>
+          <p>年度累计收入: ${cumulativeIncome.toFixed(2)}元</p>
+          <p>年度累计五险一金: ${cumulativeInsurance.toFixed(2)}元</p>
+          <p>年度累计专项附加扣除: ${cumulativeDeduction.toFixed(2)}元</p>
+          <p>年度累计应纳税所得额: ${totalTaxableIncome > 0 ? totalTaxableIncome.toFixed(2) : '0.00'}元</p>
+          <p>年度累计应纳税额: ${cumulativeTax.toFixed(2)}元</p>
+        `;
+        
+        // 更新年度汇总
+        updateYearlySummary(monthlyData, cumulativeIncome, cumulativeInsurance, cumulativeDeduction, cumulativeTax, totalTaxableIncome);
+      } else {
+        resultDiv.innerHTML = `
+          <h3>计算结果</h3>
+          <p>请至少输入一个月的收入信息</p>
+        `;
+      }
+    }
+    
+    // 更新年度汇总
+    function updateYearlySummary(monthlyData, totalIncome, totalInsurance, totalDeduction, totalTax, totalTaxableIncome) {
+      const summaryDiv = document.getElementById('yearly-summary');
+      
+      let tableHTML = `
+        <h3>年度个人所得税汇总</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>月份</th>
+              <th>税前收入(元)</th>
+              <th>五险一金(元)</th>
+              <th>专项附加扣除(元)</th>
+              <th>当月应纳税额(元)</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      monthlyData.forEach(data => {
+        tableHTML += `
+          <tr>
+            <td>${data.month}月</td>
+            <td>${data.income.toFixed(2)}</td>
+            <td>${data.insurance.toFixed(2)}</td>
+            <td>${data.deduction.toFixed(2)}</td>
+            <td>${data.tax.toFixed(2)}</td>
+          </tr>
+        `;
+      });
+      
+      tableHTML += `
+          </tbody>
+          <tfoot>
+            <tr>
+              <th>合计</th>
+              <th>${totalIncome.toFixed(2)}</th>
+              <th>${totalInsurance.toFixed(2)}</th>
+              <th>${totalDeduction.toFixed(2)}</th>
+              <th>${totalTax.toFixed(2)}</th>
+            </tr>
+          </tfoot>
+        </table>
+        
+        <div class="result">
+          <h3>年度税率分析</h3>
+          <p>年度实际平均税率: ${totalIncome > 0 ? ((totalTax / totalIncome) * 100).toFixed(2) : '0.00'}%</p>
+          <p>年度税后收入: ${(totalIncome - totalTax).toFixed(2)}元</p>
+        </div>
+      `;
+      
+      summaryDiv.innerHTML = tableHTML;
+      
+      // 保存数据用于境外收入计算
+      window.domesticData = {
+        totalIncome: totalIncome,
+        totalInsurance: totalInsurance,
+        totalDeduction: totalDeduction,
+        totalTax: totalTax,
+        totalTaxableIncome: totalTaxableIncome,
+        totalMonths: monthlyData.length
+      };
+    }
+    
+    // 计算境外收入补税
+    function calculateOverseasTax() {
+      // 检查是否已有国内收入数据
+      if (!window.domesticData) {
+        document.getElementById('overseas-result').innerHTML = `
+          <h3>境外收入补税计算结果</h3>
+          <p>请先在月度收入选项卡中输入并计算国内收入数据</p>
+        `;
+        return;
+      }
+      
+      const overseasIncome = parseFloat(document.getElementById('overseas-amount').value) || 0;
+      const overseasTaxPaid = parseFloat(document.getElementById('overseas-tax-paid').value) || 0;
+      
+      if (overseasIncome <= 0) {
+        document.getElementById('overseas-result').innerHTML = `
+          <h3>境外收入补税计算结果</h3>
+          <p>请输入有效的境外收入金额</p>
+        `;
+        return;
+      }
+      
+      // 获取国内收入数据
+      const { totalIncome, totalInsurance, totalDeduction, totalTax, totalMonths } = window.domesticData;
+      
+      // 计算国内应纳税所得额
+      const domesticTaxableIncome = Math.max(0, totalIncome - totalInsurance - totalDeduction - (5000 * totalMonths));
+      
+      // 计算合并后的应纳税所得额
+      const totalCombinedIncome = totalIncome + overseasIncome;
+      const totalCombinedTaxableIncome = Math.max(0, totalCombinedIncome - totalInsurance - totalDeduction - (5000 * totalMonths));
+      
+      // 计算仅国内收入的应纳税额
+      const domesticOnlyTax = calculateTax(domesticTaxableIncome);
+      
+      // 计算合并国内外收入的应纳税额
+      const combinedTax = calculateTax(totalCombinedTaxableIncome);
+      
+      // 计算境外所得对应的抵免限额 = 合并计算的总税额 - 仅国内收入的税额
+      const taxCreditLimit = combinedTax - domesticOnlyTax;
+      
+      // 实际可抵免的境外税款 = Min(已在境外缴纳的税款, 抵免限额)
+      const actualTaxCredit = Math.min(overseasTaxPaid, taxCreditLimit);
+      
+      // 需要补缴的税款 = 抵免限额 - 实际可抵免的境外税款
+      const additionalTaxDue = Math.max(0, taxCreditLimit - actualTaxCredit);
+      
+      // 显示计算结果
+      document.getElementById('overseas-result').innerHTML = `
+        <h3>境外收入补税计算结果</h3>
+        <p>境外收入: ${overseasIncome.toFixed(2)}元</p>
+        <p>已在境外缴纳的税款: ${overseasTaxPaid.toFixed(2)}元</p>
+        <p>国内收入: ${totalIncome.toFixed(2)}元</p>
+        <p>国内应纳税所得额: ${domesticTaxableIncome.toFixed(2)}元</p>
+        <p>国内应纳税额: ${domesticOnlyTax.toFixed(2)}元</p>
+        <p>合并国内外收入: ${totalCombinedIncome.toFixed(2)}元</p>
+        <p>合并后应纳税所得额: ${totalCombinedTaxableIncome.toFixed(2)}元</p>
+        <p>合并后应纳税额: ${combinedTax.toFixed(2)}元</p>
+        <p>境外所得抵免限额: ${taxCreditLimit.toFixed(2)}元</p>
+        <p>实际可抵免的境外税款: ${actualTaxCredit.toFixed(2)}元</p>
+        <p>需要在国内补缴的税款: ${additionalTaxDue.toFixed(2)}元</p>
+      `;
+    }
+    
+    // 根据应纳税所得额计算应纳税额
+    function calculateTax(taxableIncome) {
+      if (taxableIncome <= 0) return 0;
+      
+      let tax = 0;
+      
+      if (taxableIncome <= 36000) {
+        tax = taxableIncome * 0.03;
+      } else if (taxableIncome <= 144000) {
+        tax = taxableIncome * 0.1 - 2520;
+      } else if (taxableIncome <= 300000) {
+        tax = taxableIncome * 0.2 - 16920;
+      } else if (taxableIncome <= 420000) {
+        tax = taxableIncome * 0.25 - 31920;
+      } else if (taxableIncome <= 660000) {
+        tax = taxableIncome * 0.3 - 52920;
+      } else if (taxableIncome <= 960000) {
+        tax = taxableIncome * 0.35 - 85920;
+      } else {
+        tax = taxableIncome * 0.45 - 181920;
+      }
+      
+      return tax;
+    }
+    
+    // 页面加载时初始化
+    window.onload = function() {
+      initMonthlyTable();
+    };
+  </script>
+</body>
+</html>
